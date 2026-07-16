@@ -134,8 +134,77 @@ function renderBoard(state, dims) {
     tile.dataset.index = idx;
     tile.textContent = Game.getEmoji(value);
     tile.addEventListener("click", () => handleTileClick(idx));
+    attachSwipeHandlers(tile, idx, dims);
     board.appendChild(tile);
   });
+}
+
+// ---- Swipe gesture handling ------------------------------------------
+
+// Minimum finger movement (px) before a touch counts as a swipe rather
+// than a tap. Below this threshold the tap-to-select flow still applies.
+const SWIPE_THRESHOLD = 24;
+
+function attachSwipeHandlers(tile, idx, dims) {
+  let startX = 0;
+  let startY = 0;
+  let tracking = false;
+
+  tile.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1) return;
+    tracking = true;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  tile.addEventListener("touchend", (e) => {
+    if (!tracking) return;
+    tracking = false;
+
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_THRESHOLD) {
+      // Too small to be a swipe; let the click event handle it as a tap.
+      return;
+    }
+
+    // Prevent the synthetic click that follows touchend from also firing
+    // handleTileClick, which would re-select the tile after we've already
+    // acted on the swipe.
+    e.preventDefault();
+
+    const direction = Math.abs(dx) > Math.abs(dy)
+      ? (dx > 0 ? "right" : "left")
+      : (dy > 0 ? "down" : "up");
+
+    const targetIdx = swipeTargetIndex(idx, direction, dims);
+    if (targetIdx === null) return; // swiped off the edge of the board
+
+    const state = Game.getState();
+    if (!state || state.ended) return;
+    state.selected = null;
+    Game.attemptSwap(idx, targetIdx);
+  });
+}
+
+function swipeTargetIndex(idx, direction, dims) {
+  const row = Math.floor(idx / dims.cols);
+  const col = idx % dims.cols;
+
+  switch (direction) {
+    case "left":
+      return col > 0 ? idx - 1 : null;
+    case "right":
+      return col < dims.cols - 1 ? idx + 1 : null;
+    case "up":
+      return row > 0 ? idx - dims.cols : null;
+    case "down":
+      return row < dims.rows - 1 ? idx + dims.cols : null;
+    default:
+      return null;
+  }
 }
 
 function handleTileClick(idx) {

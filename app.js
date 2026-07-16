@@ -21,30 +21,9 @@ function showScreen(id) {
 
 // ---- UI condition assignment -----------------------------------------
 
-// Asks the Apps Script web app (via doGet) how many participants have been
-// logged under each UI type so far, then assigns whichever has fewer, so
-// the two conditions stay balanced across all participants, not just this
-// browser. Falls back to a deterministic hash of the username if the
-// counts can't be fetched (e.g. offline, or doGet hasn't been deployed).
+// Always assign to minimal UI
 async function assignUIType(username) {
-  try {
-    const res = await fetch(WEBAPP_URL, { method: "GET" });
-    if (!res.ok) throw new Error("Non-OK response from web app");
-    const counts = await res.json();
-    const minimalCount = Number(counts.minimal) || 0;
-    const complexCount = Number(counts.complex) || 0;
-
-    if (minimalCount < complexCount) return "minimal";
-    if (complexCount < minimalCount) return "complex";
-    return Math.random() < 0.5 ? "minimal" : "complex";
-  } catch (err) {
-    console.warn("Could not fetch live UI counts, using fallback assignment:", err);
-    let hash = 0;
-    for (let i = 0; i < username.length; i++) {
-      hash = (hash * 31 + username.charCodeAt(i)) >>> 0;
-    }
-    return hash % 2 === 0 ? "minimal" : "complex";
-  }
+  return "minimal";
 }
 
 // ---- Data submission ----------------------------------------------------

@@ -21,29 +21,24 @@ function showScreen(id) {
 
 // ---- UI condition assignment -----------------------------------------
 
-// Asks the Apps Script web app (via doGet) how many participants have been
-// logged under each UI type so far, then assigns whichever has fewer, so
-// the two conditions stay balanced across all participants, not just this
-// browser. Falls back to a deterministic hash of the username if the
-// counts can't be fetched (e.g. offline, or doGet hasn't been deployed).
+// Asks the Apps Script endpoint for a balanced UI assignment. The server
+// keeps the running minimal/complex counters (in PropertiesService, guarded
+// by a lock) and returns the condition this participant should get, so the
+// balancing logic lives in one place instead of being duplicated here.
+// Falls back to a random 50/50 pick if the request fails, so a network
+// hiccup never blocks the session from starting.
 async function assignUIType(username) {
   try {
     const res = await fetch(WEBAPP_URL, { method: "GET" });
-    if (!res.ok) throw new Error("Non-OK response from web app");
-    const counts = await res.json();
-    const minimalCount = Number(counts.minimal) || 0;
-    const complexCount = Number(counts.complex) || 0;
-
-    if (minimalCount < complexCount) return "minimal";
-    if (complexCount < minimalCount) return "complex";
-    return Math.random() < 0.5 ? "minimal" : "complex";
-  } catch (err) {
-    console.warn("Could not fetch live UI counts, using fallback assignment:", err);
-    let hash = 0;
-    for (let i = 0; i < username.length; i++) {
-      hash = (hash * 31 + username.charCodeAt(i)) >>> 0;
+    if (!res.ok) throw new Error(`Assignment request failed: ${res.status}`);
+    const data = await res.json();
+    if (data.uiType === "minimal" || data.uiType === "complex") {
+      return data.uiType;
     }
-    return hash % 2 === 0 ? "minimal" : "complex";
+    throw new Error(`Unexpected assignment response: ${JSON.stringify(data)}`);
+  } catch (err) {
+    console.error("assignUIType: falling back to random assignment:", err);
+    return Math.random() < 0.5 ? "minimal" : "complex";
   }
 }
 

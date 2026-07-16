@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fruit Match</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Username Screen -->
+  <section id="username-screen" class="screen active">
+    <div class="username-card">
+      <h1>Fruit Match</h1>
+      <p>Enter a username to begin the session.</p>
+      <input type="text" id="username-input" placeholder="Your username" autocomplete="off" maxlength="40" />
+      <button id="start-btn">Start</button>
+      <p id="username-error" class="error-text"></p>
+    </div>
+  </section>
+
+  <!-- Game Screen (contents injected per UI condition) -->
+  <section id="game-screen" class="screen"></section>
+
+  <!-- End Screen -->
+  <section id="end-screen" class="screen">
+    <div class="end-card">
+      <h2 id="end-title">Session complete</h2>
+      <p id="end-message">Saving your results…</p>
+      <div class="spinner" id="end-spinner"></div>
+    </div>
+  </section>
+
+<script src="game-core.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
